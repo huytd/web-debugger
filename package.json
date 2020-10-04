@@ -1,0 +1,14 @@
+{
+  "name": "wsdebugger",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "chrome-remote-interface": "^0.28.2",
+    "express": "^4.17.1",
+    "socket.io": "^2.3.0"
+  }
+}
