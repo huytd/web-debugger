@@ -3,27 +3,74 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const fs = require('fs');
-const exec = require('child_process').exec;
+const path = require('path');
 const Dbg = require('chrome-remote-interface');
+const Docker = require('dockerode');
+const exec = require('child_process').exec;
 
+const rmDir = (dir) => {
+  exec(`rm -rf ${dir}`);
+};
 
 const wait = (ms) => new Promise((resolve, _) => setTimeout(resolve, ms));
+
+const randomRange = (min, max) => {
+  return Math.floor(Math.random() * (max - min) ) + min;
+};
+
+const docker = new Docker({
+  socketPath: '/var/run/docker.sock'
+});
 
 io.on('connection', async (socket) => {
   socket.on('beginDebug', async msg => {
     console.log('Debug session started');
     const { code } = JSON.parse(msg);
+
     console.log('Write code');
-    fs.writeFileSync('./code.js', code);
+    const session = `playground/${Date.now().toPrecision(21)}`;
+    if (!fs.existsSync(`./${session}`)) {
+      fs.mkdirSync(`./${session}`);
+    }
+
+    const localPort = randomRange(1000, 9999);
+    fs.writeFileSync(path.join(__dirname + '/' + session + '/code.js'), code);
+
+    let container;
+    try {
+      const cmd = "node --inspect-brk=0.0.0.0 code.js"
+      container = await docker.createContainer({
+        'Image': 'node',
+        'Cmd': ["/bin/bash", "-c", cmd],
+        'ExposedPorts': {
+          '9229/tcp': {}
+        },
+        'HostConfig': {
+          'Binds': [`${path.join(__dirname + "/" + session)}:/usr/app/src`],
+          'PortBindings': {
+            '9229/tcp': [
+              {
+                'HostIp': '0.0.0.0',
+                'HostPort': `${localPort}`
+              }
+            ]
+          }
+        },
+        'WorkingDir': '/usr/app/src'
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
     console.log('Starting debugger');
-    let process = exec('node --inspect-brk code.js');
+    container.start();
     console.log("Debugger started");
 
     await wait(500);
 
     Dbg({
-      host: 'localhost',
-      port: 9229
+      host: '0.0.0.0',
+      port: localPort
     }, async (client) => {
       console.log('Debugger connected');
 
@@ -89,9 +136,11 @@ io.on('connection', async (socket) => {
       console.error(err);
     });
 
-    const stop = () => {
+    const stop = async () => {
       console.log('user disconnected');
-      process.kill('SIGHUP');
+      await container.stop();
+      await container.remove();
+      rmDir(`./${session}`);
     };
 
     socket.on('stopDebug', () => {
