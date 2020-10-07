@@ -6,6 +6,7 @@ import { render } from 'react-dom';
 import CodeMirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/material-palenight.css';
+import 'codemirror/theme/solarized.css';
 import 'codemirror/mode/javascript/javascript.js';
 import 'codemirror/keymap/vim.js';
 import io from 'socket.io-client';
@@ -130,6 +131,7 @@ const App = () => {
         lineWrapping: true,
         showCursorWhenSelecting: true,
         styleSelectedText: true,
+        // theme: 'solarized light',
         theme: 'material-palenight',
         mode: 'javascript',
         keyMap: 'vim',
@@ -258,7 +260,7 @@ const App = () => {
   }, [consoleResult]);
 
   return (
-    <>
+    <div className="container dark">
       <div className="panel editor">
         <textarea id="code-editor" ref={editorRef} defaultValue={TEMPLATE_CODE}></textarea>
       </div>
@@ -288,7 +290,7 @@ const App = () => {
         ))}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

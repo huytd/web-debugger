@@ -13,23 +13,54 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: #202431;
   box-sizing: border-box;
 }
 
 * {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-style: normal;
   font-size: 15px;
   box-sizing: inherit;
 }
 
-html {
-  padding: 5px;
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .container {
-  background: #202431;
+  &.dark {
+    --border-color: #202431;
+    --panel-color: #292D3E;
+    --panel-title-color: #595f7a;
+    --content-color: #FFFFFF;
+    --control-color: #3f4661;
+    --control-color-hover: #495170;
+    --control-color-active: #2b3042;
+    --control-color-disable: #2b3042;
+    --debugger-current-position-bg: #ffc000;
+    --debugger-current-position-fg: #000000;
+    --debugger-current-scope: #424249;
+  }
+  &.light {
+    --border-color: #eee8d5;
+    --panel-color: #fdf6e3;
+    --panel-title-color: #a29d8b;
+    --content-color: #586e75;
+    --control-color: #e1d6b9;
+    --control-color-hover: #efe8d7;
+    --control-color-active: #f4ecd7;
+    --control-color-disable: #f4ecd7;
+    --debugger-current-position-bg: #ffc000;
+    --debugger-current-position-fg: #000000;
+    --debugger-current-scope: #8ea1a7;
+  }
+}
+
+.container {
+  background: var(--border-color);
   width: 100%;
   height: 100%;
   display: grid;
@@ -54,8 +85,8 @@ html {
 }
 
 .panel {
-  background: #292D3E;
-  color: #FFF;
+  background: var(--panel-color);
+  color: var(--content-color);
 }
 
 .editor {
@@ -95,8 +126,8 @@ html {
 button {
   border: none;
   border-radius: 3px;
-  background: #3f4661;
-  color: #FFF;
+  background: var(--control-color);
+  color: var(--content-color);
   cursor: pointer;
   display: flex;
   flex-wrap: wrap;
@@ -110,16 +141,16 @@ button svg {
 }
 
 button:hover {
-  background: #495170;
+  background: var(--control-color-hover);
 }
 
 button:active {
-  background: #2b3042;
+  background: var(--control-color-active);
 }
 
 button:disabled {
-  background: #2b3042;
-  color: #495170;
+  background: var(--control-color-disable);
+  color: var(--control-color);
 }
 
 .debugger-watcher {
@@ -127,13 +158,13 @@ button:disabled {
   padding: 10px;
 }
 
-.CodeMirror {
+.panel.editor .CodeMirror {
   width: 100%;
   height: 100%;
   line-height: 1.3em;
 }
-.styled-background { background-color: #ffc000 !important; color: black !important; }
-.styled-scope-background { background-color: #424249; }
+.styled-background { background-color: var(--debugger-current-position-bg) !important; color: var(--debugger-current-position-fg) !important; }
+.styled-scope-background { background-color: var(--debugger-current-scope); }
 .CodeMirror-gutters {
   padding-right: 20px;
 }
@@ -141,6 +172,6 @@ button:disabled {
 .title {
   font-variant: small-caps;
   font-weight: bold;
-  color: #595f7a;
+  color: var(--panel-title-color);
 }
 
