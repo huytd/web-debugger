@@ -24,7 +24,7 @@ const gutterMarker = () => {
   return marker;
 };
 
-const TEMPLATE_CODE = `const n = 10;
+const TEMPLATE_CODE = window.localStorage.getItem('kodes-code') || `const n = 10;
 let fib = Array(n).fill(0);
 
 for (let i = 0; i < n; i++) {
@@ -219,24 +219,26 @@ const App = () => {
       enableEditing();
     });
 
-    setPlayDebug(() => () => {
+    const startDebug = () => {
       cleanUp();
       disableEditing();
+      const code = editor.getValue();
+      socket.emit('beginDebug', JSON.stringify({
+        code: code
+      }));
+      window.localStorage.setItem('kodes-code', code);
+    };
+
+    setPlayDebug(() => () => {
       isPlaying = true;
       setButtonStates(0b00100);
-      socket.emit('beginDebug', JSON.stringify({
-        code: editor.getValue()
-      }));
+      startDebug();
     });
 
     setStartDebug(() => () => {
-      cleanUp();
-      disableEditing();
       isPlaying = false;
       setButtonStates(0b00110);
-      socket.emit('beginDebug', JSON.stringify({
-        code: editor.getValue()
-      }));
+      startDebug();
     });
 
     setStopDebug(() => () => {
