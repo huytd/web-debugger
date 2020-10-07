@@ -127,9 +127,12 @@ const App = () => {
     if (editorRef.current) {
       editor = CodeMirror.fromTextArea(editorRef.current, {
         lineNumbers: true,
+        lineWrapping: true,
+        showCursorWhenSelecting: true,
         styleSelectedText: true,
         theme: 'material-palenight',
         mode: 'javascript',
+        keyMap: 'vim',
         gutters: ["CodeMirror-linenumbers", "breakpoints"]
       });
     }
@@ -143,6 +146,14 @@ const App = () => {
       consoleDispatch({ type: 'CLEAR_LOG' });
     }
   }
+
+  const disableEditing = () => {
+    editor.setOption('readOnly', true);
+  };
+
+  const enableEditing = () => {
+    editor.setOption('readOnly', false);
+  };
 
   const [ playDebug, setPlayDebug ] = React.useState(() => () => {});
   const [ startDebug, setStartDebug ] = React.useState(() => () => {});
@@ -203,10 +214,12 @@ const App = () => {
       console.log("Debugger auto stop");
       isPlaying = false;
       setButtonStates(0b11001);
+      enableEditing();
     });
 
     setPlayDebug(() => () => {
       cleanUp();
+      disableEditing();
       isPlaying = true;
       setButtonStates(0b00100);
       socket.emit('beginDebug', JSON.stringify({
@@ -216,6 +229,7 @@ const App = () => {
 
     setStartDebug(() => () => {
       cleanUp();
+      disableEditing();
       isPlaying = false;
       setButtonStates(0b00110);
       socket.emit('beginDebug', JSON.stringify({
@@ -228,6 +242,7 @@ const App = () => {
       socket.emit('stopDebug');
       cleanUp(true);
       setButtonStates(0b11001);
+      enableEditing();
     });
 
     setNextStepDebug(() => () => {
