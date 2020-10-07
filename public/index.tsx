@@ -150,8 +150,7 @@ const App = () => {
   const [ nextStepDebug, setNextStepDebug] = React.useState(() => () => {});
 
   React.useEffect(() => {
-    socket.off('Debugger.paused');
-    socket.on('Debugger.paused', msg => {
+    socket.off('Debugger.paused').on('Debugger.paused', msg => {
       const { callFrameId, location, scope } = JSON.parse(msg);
 
       const scopefrom = { line: scope.startLocation.lineNumber, ch: 0 };
@@ -191,19 +190,16 @@ const App = () => {
       setWatchResult(output);
     };
 
-    socket.off('Debugger.evalResult');
-    socket.on('Debugger.evalResult', data => {
+    socket.off('Debugger.evalResult').on('Debugger.evalResult', data => {
       popuplateResult(data);
     });
 
-    socket.off('Debugger.console');
-    socket.on('Debugger.console', (data) => {
+    socket.off('Debugger.console').on('Debugger.console', (data) => {
       const { type, msg } = JSON.parse(data);
       consoleDispatch({ type: 'ADD_LOG', value: { type, msg } });
     });
 
-    socket.off('Debugger.stop');
-    socket.on('Debugger.stop', () => {
+    socket.off('Debugger.stop').on('Debugger.stop', () => {
       console.log("Debugger auto stop");
       isPlaying = false;
       setButtonStates(0b11001);
