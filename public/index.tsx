@@ -1,5 +1,4 @@
 import './styles/main.scss';
-import './styles/shadowfox.css';
 import * as React from 'react';
 import { render } from 'react-dom';
 
@@ -19,7 +18,7 @@ const socket = io();
 
 const gutterMarker = () => {
   var marker = document.createElement("div");
-  marker.style.color = "#00ff00";
+  marker.className = "debugger-current";
   marker.innerHTML = "►";
   return marker;
 };
@@ -90,7 +89,8 @@ const App = () => {
 
   let editorState = {
     lastScope: null,
-    lastPos: null
+    lastPos: null,
+    lastErr: null
   };
 
   const [ watchList, setWatchList ] = React.useState([ "n", "fib", "i", "fib[i]" ]);
@@ -131,8 +131,8 @@ const App = () => {
         lineWrapping: true,
         showCursorWhenSelecting: true,
         styleSelectedText: true,
-        // theme: 'solarized light',
-        theme: 'material-palenight',
+        theme: 'solarized light',
+        // theme: 'material-palenight',
         mode: 'javascript',
         keyMap: 'vim',
         gutters: ["CodeMirror-linenumbers", "breakpoints"]
@@ -143,6 +143,7 @@ const App = () => {
   const cleanUp = (keepConsole = false) => {
     if (editorState.lastScope) editorState.lastScope.clear();
     if (editorState.lastPos) editorState.lastPos.clear();
+    if (editorState.lastErr) editorState.lastErr.clear();
     if (editor) editor.clearGutter('breakpoints');
     if (!keepConsole) {
       consoleDispatch({ type: 'CLEAR_LOG' });
@@ -212,6 +213,21 @@ const App = () => {
       consoleDispatch({ type: 'ADD_LOG', value: { type, msg } });
     });
 
+    socket.off('Debugger.errorThrown').on('Debugger.errorThrown', (data) => {
+      const { description } = JSON.parse(data);
+      const lineMatch = description.match(/code\.js\:(\d+)/) || [];
+      if (lineMatch.length) {
+        const line = (parseInt(lineMatch[1]) || 1) - 1;
+        const lineLength = editor.getLine(line).length;
+        const from = { line: line, ch: 0 };
+        const to = { line: line, ch: lineLength };
+        if (editorState.lastErr) editorState.lastErr.clear();
+        editorState.lastErr = editor.markText(from, to, { className: "styled-error" });
+      }
+      consoleDispatch({ type: 'ADD_LOG', value: { type: 'error', msg: description } });
+      stopDebugFn(true);
+    });
+
     socket.off('Debugger.stop').on('Debugger.stop', () => {
       console.log("Debugger auto stop");
       isPlaying = false;
@@ -219,7 +235,7 @@ const App = () => {
       enableEditing();
     });
 
-    const startDebug = () => {
+    const startDebugFn = () => {
       cleanUp();
       disableEditing();
       const code = editor.getValue();
@@ -229,24 +245,30 @@ const App = () => {
       window.localStorage.setItem('kodes-code', code);
     };
 
+    const stopDebugFn = (doNotCleanup = false) => {
+      isPlaying = false;
+      socket.emit('stopDebug');
+      if (!doNotCleanup) {
+        cleanUp(true);
+      }
+      setButtonStates(0b11001);
+      enableEditing();
+    };
+
     setPlayDebug(() => () => {
       isPlaying = true;
       setButtonStates(0b00100);
-      startDebug();
+      startDebugFn();
     });
 
     setStartDebug(() => () => {
       isPlaying = false;
       setButtonStates(0b00110);
-      startDebug();
+      startDebugFn();
     });
 
     setStopDebug(() => () => {
-      isPlaying = false;
-      socket.emit('stopDebug');
-      cleanUp(true);
-      setButtonStates(0b11001);
-      enableEditing();
+      stopDebugFn();
     });
 
     setNextStepDebug(() => () => {
@@ -262,7 +284,7 @@ const App = () => {
   }, [consoleResult]);
 
   return (
-    <div className="container dark">
+    <div className="container light">
       <div className="panel editor">
         <textarea id="code-editor" ref={editorRef} defaultValue={TEMPLATE_CODE}></textarea>
       </div>
@@ -270,7 +292,7 @@ const App = () => {
         <div className="title">console</div>
         <div id="console">
         {consoleResult.map(c => (
-          <div className={["log", c.type].join(" ")}>{c.msg}</div>
+          <pre className={["log", c.type].join(" ")}>{c.msg}</pre>
         ))}
         <div ref={consoleRef}/>
         </div>

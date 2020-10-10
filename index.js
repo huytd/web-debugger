@@ -39,6 +39,14 @@ const runDebugSession = (localPort, socket, container, session) => {
       socket.emit('Debugger.console', JSON.stringify({ type, msg }));
     });
 
+    Runtime.exceptionThrown(({ exceptionDetails }) => {
+      const { exception: { className, description } } = exceptionDetails;
+      socket.emit('Debugger.errorThrown', JSON.stringify({
+        type: className,
+        description: description
+      }));
+    });
+
     socket.on('stepIn', () => {
       Debugger.stepInto();
     });

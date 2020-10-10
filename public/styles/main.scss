@@ -43,6 +43,8 @@ html, body {
     --debugger-current-position-bg: #ffc000;
     --debugger-current-position-fg: #000000;
     --debugger-current-scope: #424249;
+    --debugger-error-bg: #ee5253;
+    --debugger-error-fg: #ffffff;
   }
   &.light {
     --border-color: #eee8d5;
@@ -53,9 +55,11 @@ html, body {
     --control-color-hover: #efe8d7;
     --control-color-active: #f4ecd7;
     --control-color-disable: #f4ecd7;
-    --debugger-current-position-bg: #ffc000;
+    --debugger-current-position-bg: #ff9100;
     --debugger-current-position-fg: #000000;
-    --debugger-current-scope: #8ea1a7;
+    --debugger-current-scope: #ffe6bf;
+    --debugger-error-bg: #ee5253;
+    --debugger-error-fg: #ffffff;
   }
 }
 
@@ -112,6 +116,14 @@ html, body {
 .console #console {
   grid-area: console-content;
   overflow: auto;
+
+  .log {
+    display: block;
+    clear: both;
+    &.error {
+      color: #ee5253;
+    }
+  }
 }
 
 .debugger-controller {
@@ -121,6 +133,8 @@ html, body {
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: 1fr;
   gap: 5px;
+
+  background-color: var(--border-color);
 }
 
 button {
@@ -165,8 +179,12 @@ button:disabled {
 }
 .styled-background { background-color: var(--debugger-current-position-bg) !important; color: var(--debugger-current-position-fg) !important; }
 .styled-scope-background { background-color: var(--debugger-current-scope); }
+.styled-error { background-color: var(--debugger-error-bg) !important; color: var(--debugger-error-fg) !important; }
 .CodeMirror-gutters {
   padding-right: 20px;
+}
+.debugger-current {
+  color: var(--debugger-current-position-bg);
 }
 
 .title {
