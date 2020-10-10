@@ -85,8 +85,11 @@ const runDebugSession = (localPort, socket, container, session) => {
         const url = frame.url;
         if (url.match(/file:\/\/\//)) {
           const location = frame.location;
-          const scope = frame.scopeChain[0];
-          socket.emit('Debugger.paused', JSON.stringify({ callFrameId, location, scope }));
+          // const scope = frame.scopeChain[0];
+          const scope = frame.scopeChain.find(scope => scope.type === 'local');
+          console.log("SCOPE", scope, scope.object.objectId);
+          const variables = await Runtime.getProperties({ objectId: scope.object.objectId });
+          socket.emit('Debugger.paused', JSON.stringify({ callFrameId, location, scope, variables }));
         } else {
           await Debugger.stepOver();
         }

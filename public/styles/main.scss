@@ -170,6 +170,28 @@ button:disabled {
 .debugger-watcher {
   grid-area: watcher;
   padding: 10px;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+  grid-template-areas:
+  "watchlist"
+  "localVariables";
+
+  .watchList {
+    grid-area: "watchList";
+  }
+
+  .localVariables {
+    grid-area: "localVariables";
+  }
+
+  .watch-item {
+    margin-bottom: 2px;
+    &:hover {
+      background: var(--debugger-current-scope);
+    }
+  }
 }
 
 .panel.editor .CodeMirror {

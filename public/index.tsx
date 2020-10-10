@@ -36,6 +36,8 @@ for (let i = 0; i < n; i++) {
   }
 }`;
 
+const TEMPLATE_WATCH = (window.localStorage.getItem("kodes-watch") || "n, fib, i, fib[i]").split(",").map(w => w.trim());
+
 const SVG = {
   play: (
     <svg x="0px" y="0px" viewBox="0 0 20 20" enableBackground="new 0 0 20 20">
@@ -93,8 +95,9 @@ const App = () => {
     lastErr: null
   };
 
-  const [ watchList, setWatchList ] = React.useState([ "n", "fib", "i", "fib[i]" ]);
+  const [ watchList, setWatchList ] = React.useState(TEMPLATE_WATCH);
   const [ watchResult, setWatchResult ] = React.useState(watchList.map(w => ({ name: w, value: 'undefined' })));
+  const [ localVariablesResult, setLocalVariablesResult ] = React.useState([]);
   const [ buttonStates, setButtonStates ] = React.useState(0b11001);
 
   const [ consoleResult, consoleDispatch ] = React.useReducer(
@@ -117,6 +120,7 @@ const App = () => {
       "Enter the list of expressions to watch (comma separated):",
       watchList.join(", ")
     );
+    window.localStorage.setItem("kodes-watch", list);
     setWatchList(list.split(',').map(w => w.trim()));
   };
 
@@ -165,8 +169,7 @@ const App = () => {
 
   React.useEffect(() => {
     socket.off('Debugger.paused').on('Debugger.paused', msg => {
-      const { callFrameId, location, scope } = JSON.parse(msg);
-
+      const { callFrameId, location, scope, variables } = JSON.parse(msg);
       const scopefrom = { line: scope.startLocation.lineNumber, ch: 0 };
       const scopeto = { line: scope.endLocation.lineNumber, ch: scope.endLocation.columnNumber };
       if (editorState.lastScope) editorState.lastScope.clear();
@@ -184,6 +187,16 @@ const App = () => {
       socket.emit('eval', JSON.stringify({
         callFrameId,
         expressions: watchList
+      }));
+
+      const localVars = variables.result || [];
+      setLocalVariablesResult(localVars.map(v => {
+        return {
+          name: v.name,
+          value: v.value?.value || v.value?.description || "undefined"
+        }
+      }).filter(v => {
+        return v.name.match(/exports|require|module|__filename|__dirname/) === null;
       }));
 
       if (isPlaying) {
@@ -305,13 +318,25 @@ const App = () => {
         <button id="btn-watch" disabled={!(1 & (buttonStates >> 0))} onClick={changeWatchList}>{SVG.watch}</button>
       </div>
       <div className="panel debugger-watcher">
-        <div className="title">watch expressions</div>
-        <div id="watcher">
-        {watchResult.map(r => (
-          <div style={{}}>
-            {r.name} = {JSON.stringify(r.value)}
+        <div className="sub-panel watchList">
+          <div className="title">watch expressions</div>
+          <div id="watcher">
+            {watchResult.map(r => (
+              <div className="watch-item">
+                {r.name} = {JSON.stringify(r.value)}
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+        <div className="sub-panel localVariables">
+          <div className="title">local variables</div>
+          <div id="variables">
+            {localVariablesResult.map(r => (
+              <div className="watch-item">
+                {r.name} = {JSON.stringify(r.value)}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
