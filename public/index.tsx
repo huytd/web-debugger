@@ -39,6 +39,11 @@ for (let i = 0; i < n; i++) {
 const TEMPLATE_WATCH = (window.localStorage.getItem("kodes-watch") || "n, fib, i, fib[i]").split(",").map(w => w.trim());
 
 const SVG = {
+  run: (
+    <svg viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+    </svg>
+  ),
   play: (
     <svg x="0px" y="0px" viewBox="0 0 20 20" enableBackground="new 0 0 20 20">
       <path fill="currentColor" d="M15,10.001c0,0.299-0.305,0.514-0.305,0.514l-8.561,5.303C5.51,16.227,5,15.924,5,15.149V4.852
@@ -98,7 +103,7 @@ const App = () => {
   const [ watchList, setWatchList ] = React.useState(TEMPLATE_WATCH);
   const [ watchResult, setWatchResult ] = React.useState(watchList.map(w => ({ name: w, value: 'undefined' })));
   const [ localVariablesResult, setLocalVariablesResult ] = React.useState([]);
-  const [ buttonStates, setButtonStates ] = React.useState(0b11001);
+  const [ buttonStates, setButtonStates ] = React.useState(0b111001);
 
   const [ consoleResult, consoleDispatch ] = React.useReducer(
     (state, action) => {
@@ -144,6 +149,13 @@ const App = () => {
     }
   }, []);
 
+  const executeCode = () => {
+    if (socket) {
+      const code = editor.getValue();
+      socket.emit('zap', JSON.stringify({ code }));
+    }
+  };
+
   const cleanUp = (keepConsole = false) => {
     if (editorState.lastScope) editorState.lastScope.clear();
     if (editorState.lastPos) editorState.lastPos.clear();
@@ -168,6 +180,18 @@ const App = () => {
   const [ nextStepDebug, setNextStepDebug] = React.useState(() => () => {});
 
   React.useEffect(() => {
+    socket.off('zapResult').on('zapResult', msg => {
+      const { stderr, stdout } = JSON.parse(msg);
+      if (stderr) {
+        consoleDispatch({ type: 'ADD_LOG', value: { type: 'error', msg: stderr } });
+      }
+      if (stdout) {
+        stdout.split("\n").forEach(line => {
+          consoleDispatch({ type: 'ADD_LOG', value: { type: 'log', msg: line } });
+        });
+      }
+    });
+
     socket.off('Debugger.paused').on('Debugger.paused', msg => {
       const { callFrameId, location, scope, variables } = JSON.parse(msg);
       const scopefrom = { line: scope.startLocation.lineNumber, ch: 0 };
@@ -244,7 +268,7 @@ const App = () => {
     socket.off('Debugger.stop').on('Debugger.stop', () => {
       console.log("Debugger auto stop");
       isPlaying = false;
-      setButtonStates(0b11001);
+      setButtonStates(0b111001);
       enableEditing();
     });
 
@@ -264,19 +288,19 @@ const App = () => {
       if (!doNotCleanup) {
         cleanUp(true);
       }
-      setButtonStates(0b11001);
+      setButtonStates(0b111001);
       enableEditing();
     };
 
     setPlayDebug(() => () => {
       isPlaying = true;
-      setButtonStates(0b00100);
+      setButtonStates(0b000100);
       startDebugFn();
     });
 
     setStartDebug(() => () => {
       isPlaying = false;
-      setButtonStates(0b00110);
+      setButtonStates(0b000110);
       startDebugFn();
     });
 
@@ -311,11 +335,54 @@ const App = () => {
         </div>
       </div>
       <div className="panel debugger-controller">
-        <button id="btn-play" disabled={!(1 & (buttonStates >> 4))} onClick={playDebug}>{SVG.play}</button>
-        <button id="btn-debug" disabled={!(1 & (buttonStates >> 3))} onClick={startDebug}>{SVG.debug}</button>
-        <button id="btn-stop" disabled={!(1 & (buttonStates >> 2))} onClick={stopDebug}>{SVG.stop}</button>
-        <button id="btn-stepin" disabled={!(1 & (buttonStates >> 1))} onClick={nextStepDebug}>{SVG.stepIn}</button>
-        <button id="btn-watch" disabled={!(1 & (buttonStates >> 0))} onClick={changeWatchList}>{SVG.watch}</button>
+        <button
+          id="btn-run"
+          disabled={!(1 & (buttonStates >> 5))}
+          onClick={executeCode}
+          title="Execute Code"
+        >
+          {SVG.run}
+        </button>
+        <button
+          id="btn-play"
+          disabled={!(1 & (buttonStates >> 4))}
+          onClick={playDebug}
+          title="Autoplay Debug"
+        >
+          {SVG.play}
+        </button>
+        <button
+          id="btn-debug"
+          disabled={!(1 & (buttonStates >> 3))}
+          onClick={startDebug}
+          title="Debug"
+        >
+          {SVG.debug}
+        </button>
+        <button
+          id="btn-stop"
+          disabled={!(1 & (buttonStates >> 2))}
+          onClick={stopDebug}
+          title="Stop Debug"
+        >
+          {SVG.stop}
+        </button>
+        <button
+          id="btn-stepin"
+          disabled={!(1 & (buttonStates >> 1))}
+          onClick={nextStepDebug}
+          title="Next Step"
+        >
+          {SVG.stepIn}
+        </button>
+        <button
+          id="btn-watch"
+          disabled={!(1 & (buttonStates >> 0))}
+          onClick={changeWatchList}
+          title="Change Watch List"
+        >
+          {SVG.watch}
+        </button>
       </div>
       <div className="panel debugger-watcher">
         <div className="sub-panel watchList">
