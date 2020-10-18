@@ -1,0 +1,26 @@
+.console {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 22px 1fr;
+  grid-template-areas:
+    "console-title"
+    "console-content";
+
+  .title {
+    grid-area: console-title;
+  }
+
+  #console {
+    grid-area: console-content;
+    overflow: auto;
+
+    .log {
+      display: block;
+      clear: both;
+      &.error {
+        color: #ee5253;
+      }
+    }
+  }
+}

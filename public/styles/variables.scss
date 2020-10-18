@@ -1,0 +1,32 @@
+.container {
+  &.dark {
+    --border-color: #202431;
+    --panel-color: #292D3E;
+    --panel-title-color: #595f7a;
+    --content-color: #FFFFFF;
+    --control-color: #3f4661;
+    --control-color-hover: #495170;
+    --control-color-active: #2b3042;
+    --control-color-disable: #2b3042;
+    --debugger-current-position-bg: #ffc000;
+    --debugger-current-position-fg: #000000;
+    --debugger-current-scope: #424249;
+    --debugger-error-bg: #ee5253;
+    --debugger-error-fg: #ffffff;
+  }
+  &.light {
+    --border-color: #eee8d5;
+    --panel-color: #fdf6e3;
+    --panel-title-color: #a29d8b;
+    --content-color: #586e75;
+    --control-color: #e1d6b9;
+    --control-color-hover: #efe8d7;
+    --control-color-active: #f4ecd7;
+    --control-color-disable: #f4ecd7;
+    --debugger-current-position-bg: #ff9100;
+    --debugger-current-position-fg: #000000;
+    --debugger-current-scope: #ffe6bf;
+    --debugger-error-bg: #ee5253;
+    --debugger-error-fg: #ffffff;
+  }
+}

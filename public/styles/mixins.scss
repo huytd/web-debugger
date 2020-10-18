@@ -1,0 +1,9 @@
+$breakpoint: 768px;
+
+@mixin on-large-screen {
+  @media only screen and (min-width: $breakpoint + 1) { @content; }
+}
+
+@mixin on-not-large-screen {
+  @media only screen and (max-width: $breakpoint) { @content; }
+}

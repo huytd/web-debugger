@@ -1,0 +1,40 @@
+@import "~/styles/variables";
+
+.debugger-controller {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: 1fr;
+  gap: 5px;
+
+  background-color: var(--border-color);
+
+  button {
+    border: none;
+    border-radius: 3px;
+    background: var(--control-color);
+    color: var(--content-color);
+    cursor: pointer;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  button svg {
+    height: 20px;
+  }
+
+  button:hover {
+    background: var(--control-color-hover);
+  }
+
+  button:active {
+    background: var(--control-color-active);
+  }
+
+  button:disabled {
+    background: var(--control-color-disable);
+    color: var(--control-color);
+  }
+}

@@ -1,0 +1,29 @@
+@import "~/styles/variables";
+
+.CodeMirror {
+  width: 100%;
+  height: 100%;
+  line-height: 1.3em;
+}
+
+.styled-background {
+  background-color: var(--debugger-current-position-bg) !important;
+  color: var(--debugger-current-position-fg) !important;
+}
+
+.styled-scope-background {
+  background-color: var(--debugger-current-scope);
+}
+
+.styled-error {
+  background-color: var(--debugger-error-bg) !important;
+  color: var(--debugger-error-fg) !important;
+}
+
+.CodeMirror-gutters {
+  padding-right: 20px;
+}
+
+.debugger-current {
+  color: var(--debugger-current-position-bg);
+}

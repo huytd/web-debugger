@@ -67,114 +67,119 @@ const runInDocker = (docker, image, command, options) => new Promise(async (reso
 
 const runDebugSession = (localPort, socket, container, session) => {
   return new Promise(async (resolve) => {
-    const client = await Dbg({
-      host: '0.0.0.0',
-      port: localPort
-    });
+    try {
+      const client = await Dbg({
+        host: '0.0.0.0',
+        port: localPort
+      });
 
-    console.log('Debugger connected');
+      console.log('Debugger connected');
 
-    const { Debugger, Runtime } = client;
+      const { Debugger, Runtime } = client;
 
-    Runtime.consoleAPICalled(({ type, args }) => {
-      const msg = args.map(o => o.value || o.description).join(' ');
-      socket.emit('Debugger.console', JSON.stringify({ type, msg }));
-    });
+      Runtime.consoleAPICalled(({ type, args }) => {
+        const msg = args.map(o => o.value || o.description).join(' ');
+        socket.emit('Debugger.console', JSON.stringify({ type, msg }));
+      });
 
-    Runtime.exceptionThrown(({ exceptionDetails }) => {
-      const { exception: { className, description } } = exceptionDetails;
-      socket.emit('Debugger.errorThrown', JSON.stringify({
-        type: className,
-        description: description
-      }));
-    });
+      Runtime.exceptionThrown(({ exceptionDetails }) => {
+        const { exception: { className, description } } = exceptionDetails;
+        socket.emit('Debugger.errorThrown', JSON.stringify({
+          type: className,
+          description: description
+        }));
+      });
 
-    socket.on('stepIn', () => {
-      Debugger.stepInto();
-    });
+      socket.on('stepIn', () => {
+        Debugger.stepInto();
+      });
 
-    socket.on('stepOut', () => {
-      Debugger.stepOut();
-    });
+      socket.on('stepOut', () => {
+        Debugger.stepOut();
+      });
 
-    socket.on('stepOver', () => {
-      Debugger.stepOver();
-    });
+      socket.on('stepOver', () => {
+        Debugger.stepOver();
+      });
 
-    socket.on('eval', async (msg) => {
-      const { callFrameId, expressions } = JSON.parse(msg);
-      const result = await Promise.all(expressions.map(async (e) => {
-        const ret = await Debugger.evaluateOnCallFrame({
-          callFrameId,
-          expression: `${e}`,
-          silent: true,
-          returnByValue: true
-        });
-        return {
-          name: e,
-          result: ret.result
-        };
-      }));
-      socket.emit('Debugger.evalResult', JSON.stringify({ result }));
-    });
+      socket.on('eval', async (msg) => {
+        const { callFrameId, expressions } = JSON.parse(msg);
+        const result = await Promise.all(expressions.map(async (e) => {
+          const ret = await Debugger.evaluateOnCallFrame({
+            callFrameId,
+            expression: `${e}`,
+            silent: true,
+            returnByValue: true
+          });
+          return {
+            name: e,
+            result: ret.result
+          };
+        }));
+        socket.emit('Debugger.evalResult', JSON.stringify({ result }));
+      });
 
-    Debugger.paused(async ({ callFrames }) => {
-      if (callFrames.length <= 1) {
-        stop();
-      } else {
-        const frame = callFrames[0];
-        const callFrameId = frame.callFrameId;
-        const url = frame.url;
-        if (url.match(/file:\/\/\//)) {
-          const location = frame.location;
-          // const scope = frame.scopeChain[0];
-          const scope = frame.scopeChain.find(scope => scope.type === 'local');
-          console.log("SCOPE", scope, scope.object.objectId);
-          const variables = await Runtime.getProperties({ objectId: scope.object.objectId });
-          socket.emit('Debugger.paused', JSON.stringify({ callFrameId, location, scope, variables }));
+      Debugger.paused(async ({ callFrames }) => {
+        if (callFrames.length <= 1) {
+          stop();
         } else {
-          await Debugger.stepOver();
-        }
-      }
-    });
-
-    const stop = async () => {
-      console.log('Debugger disconnected');
-      if (socket) {
-        socket.emit('Debugger.stop');
-        const events = socket.eventNames();
-        events.forEach(event => {
-          if (event !== 'beginDebug') {
-            const fns = socket.listeners(event);
-            fns.forEach(fn => {
-              socket.removeListener(event, fn);
-            });
+          const frame = callFrames[0];
+          const callFrameId = frame.callFrameId;
+          const url = frame.url;
+          if (url.match(/file:\/\/\//)) {
+            const location = frame.location;
+            // const scope = frame.scopeChain[0];
+            const scope = frame.scopeChain.find(scope => scope.type === 'local');
+            console.log("SCOPE", scope, scope.object.objectId);
+            const variables = await Runtime.getProperties({ objectId: scope.object.objectId });
+            socket.emit('Debugger.paused', JSON.stringify({ callFrameId, location, scope, variables }));
+          } else {
+            await Debugger.stepOver();
           }
-        });
-      }
-      if (client) {
-        await client.close();
-      }
-      if (container) {
-        await container.stop();
-        await container.remove();
-      }
-      rmDir(`./${session}`);
-      resolve();
-    };
+        }
+      });
 
-    socket.on('stopDebug', async () => {
-      await stop();
-    });
+      const stop = async () => {
+        console.log('Debugger disconnected');
+        if (socket) {
+          socket.emit('Debugger.stop');
+          const events = socket.eventNames();
+          events.forEach(event => {
+            if (event !== 'beginDebug') {
+              const fns = socket.listeners(event);
+              fns.forEach(fn => {
+                socket.removeListener(event, fn);
+              });
+            }
+          });
+        }
+        if (client) {
+          await client.close();
+        }
+        if (container) {
+          await container.stop();
+          await container.remove();
+        }
+        rmDir(`./${session}`);
+        resolve();
+      };
 
-    socket.on('disconnect', async () => {
-      await stop();
-    });
+      socket.on('stopDebug', async () => {
+        await stop();
+      });
 
-    console.log("Start up the debgugging process");
-    await Runtime.enable();
-    await Runtime.runIfWaitingForDebugger();
-    await Debugger.enable();
+      socket.on('disconnect', async () => {
+        await stop();
+      });
+
+      console.log("Start up the debgugging process");
+      await Runtime.enable();
+      await Runtime.runIfWaitingForDebugger();
+      await Debugger.enable();
+    } catch {
+      await container.stop();
+      await container.remove();
+    }
   });
 }
 

@@ -2,7 +2,7 @@
   "name": "wsdebugger",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "scripts": {
     "start": "node index.js"
   },
