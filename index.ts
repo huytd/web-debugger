@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const ws = require('socket.io')(http);
 const Docker = require('dockerode');
 const Bundler = require('parcel-bundler');
 const {handleSocketSession} = require('./backend/debugger');
@@ -10,7 +10,7 @@ const docker = new Docker({
   socketPath: '/var/run/docker.sock'
 });
 
-io.on('connection', async (socket) => {
+ws.on('connection', async (socket) => {
   handleSocketSession(socket, docker);
 });
 

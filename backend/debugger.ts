@@ -4,9 +4,10 @@ const path = require('path');
 const fs = require('fs');
 const Dbg = require('chrome-remote-interface');
 
-const HOST_IP = '127.0.0.1';
+const HOST_IP = '0.0.0.0';
+const PLAYGROUND_PATH = '../playground';
 
-export const runDebugSession = (localPort, socket, container, session) => {
+export const runDebugSession = (localPort, socket, container, sessionPath) => {
   return new Promise(async (resolve) => {
     try {
       const client = await Dbg({
@@ -101,7 +102,7 @@ export const runDebugSession = (localPort, socket, container, session) => {
           await container.stop();
           await container.remove();
         }
-        rmDir(`./${session}`);
+        rmDir(sessionPath);
         resolve();
       };
 
@@ -126,20 +127,22 @@ export const runDebugSession = (localPort, socket, container, session) => {
 }
 
 export const handleSocketSession = (socket, docker) => {
+  const writeCode = (src) => {
+    const session = path.join(__dirname, `${PLAYGROUND_PATH}/${Date.now().toPrecision(21)}`);
+    if (!fs.existsSync(session)) {
+      fs.mkdirSync(session);
+    }
+    fs.writeFileSync(path.join(session, 'code.js'), src);
+    return session;
+  };
+
   socket.on('zap', async msg => {
     const { code } = JSON.parse(msg);
-
-    const session = `playground/${Date.now().toPrecision(21)}`;
-    if (!fs.existsSync(`./${session}`)) {
-      fs.mkdirSync(`./${session}`);
-    }
-
-    fs.writeFileSync(path.join(__dirname + '/' + session + '/code.js'), code);
-
+    const debugPath = writeCode(code);
     const cmd = "node code.js"
     const result = await runInDocker(docker, 'node', cmd, {
       'HostConfig': {
-        'Binds': [`${path.join(__dirname + "/" + session)}:/usr/app/src`],
+        'Binds': [`${debugPath}:/usr/app/src`],
       },
       'WorkingDir': '/usr/app/src'
     });
@@ -152,14 +155,9 @@ export const handleSocketSession = (socket, docker) => {
     const { code } = JSON.parse(msg);
 
     console.log('Write code');
-    const session = `playground/${Date.now().toPrecision(21)}`;
-    if (!fs.existsSync(`./${session}`)) {
-      fs.mkdirSync(`./${session}`);
-    }
+    const debugPath = writeCode(code);
 
     const localPort = randomRange(1000, 9999);
-    fs.writeFileSync(path.join(__dirname + '/' + session + '/code.js'), code);
-
     let container;
     try {
       const cmd = "node --inspect-brk=" + HOST_IP + " code.js"
@@ -170,7 +168,7 @@ export const handleSocketSession = (socket, docker) => {
           '9229/tcp': {}
         },
         'HostConfig': {
-          'Binds': [`${path.join(__dirname + "/" + session)}:/usr/app/src`],
+          'Binds': [`${debugPath}:/usr/app/src`],
           'PortBindings': {
             '9229/tcp': [
               {
@@ -193,7 +191,7 @@ export const handleSocketSession = (socket, docker) => {
     await wait(500);
 
     try {
-      await runDebugSession(localPort, socket, container, session);
+      await runDebugSession(localPort, socket, container, debugPath);
     } catch (err) {
       console.log("ApplicationError:")
       console.error(err);
