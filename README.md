@@ -1,6 +1,6 @@
 # Web-based JavaScript Step Debugger
 
-![](screnshot.png)
+![](./metadata/screnshot.png)
 
 My effort to build a web-based JavaScript step debugger. Pretty unstable now but should be enough to step through the code with variable watcher, on both global and local stack.
 
@@ -22,7 +22,7 @@ There are two running mode:
 
 The following diagram describe the high level architecture of the debugger:
 
-![](web-debugger-architecture.png)
+![](./metadata/web-debugger-architecture.png)
 
 Web UI will communicate with the backend via WebSocket. When the debug session start, a new Docker container will be created to run the NodeJS debugger.
 
