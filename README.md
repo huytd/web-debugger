@@ -1,6 +1,6 @@
 # Web-based JavaScript Step Debugger
 
-![](./metadata/screnshot.png)
+![](./metadata/screenshot.png)
 
 My effort to build a web-based JavaScript step debugger. Pretty unstable now but should be enough to step through the code with variable watcher, on both global and local stack.
 
