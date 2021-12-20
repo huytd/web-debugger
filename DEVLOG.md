@@ -1,4 +1,4 @@
-![](https://raw.githubusercontent.com/huytd/web-debugger/master/metadata/screenshot.png)
+![](./metadata/screenshot.png)
 
 # Where it begins
 
@@ -62,7 +62,7 @@ Eventually, I ended up with a Single Source File application -- literally everyt
 
 The idea is, spliting the UI into many different parts, and everything are connected together via an event system, components communicate by passing around messages. By doing this, I can add or remove any component at anytime without breaking the whole thing.
 
-![](https://i.imgur.com/jkOUxws.png)
+![](./metadata/ui.png)
 
 In order to do so, I need an Event System, it's fun (and trivial) to build one from scratch.
 
@@ -72,7 +72,7 @@ Thing goes pretty well and the whole refactoring process is not as complex as I 
 
 The following diagram show the communication flow between each components using the Event System:
 
-![](https://i.imgur.com/lLuW1gj.png)
+![](./metadata/roles.png)
 
 # Research
 ## Debugger Backend
